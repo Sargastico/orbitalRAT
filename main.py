@@ -1,7 +1,6 @@
 import repository.database as db
+import resources.api as api
 
-try:
-    db.updateDatabase("LAAZLY-K8434A-49DTES-4JAD")
+test = api.getSatelliteTLE('46235')
 
-except Exception as e:
-    print(e)
+print(test)

@@ -1,9 +1,7 @@
 import sqlite3
-import colorlog
-import logging
 from typing import Tuple
 import resources.logcall as log
-import requests
+import resources.api as api
 import json
 
 connection = None
@@ -36,7 +34,6 @@ def initConnection():
 
 def updateDatabase(api_key):
 
-    api_url = "https://api.n2yo.com/rest/v1/satellite/tle/"
 
     connection, e = getConnection()
 
@@ -54,10 +51,8 @@ def updateDatabase(api_key):
 
         last_id = int(last_id) + 1
 
-        request_url = api_url + str(last_id) + "&apiKey=" + api_key
-        resp = requests.get(url=request_url)
+        resp = api.rawJsonInfoRequest(last_id)
         data = json.loads(resp.text)
-        # print(resp.text)
 
         if 'error' in resp.text:
 
@@ -66,7 +61,7 @@ def updateDatabase(api_key):
             last_id = str(last_id)
             cursor.execute("UPDATE lastID SET id = ?", (last_id,))
             connection.commit()
-            raise ApiExceededException("API Error - exceeded the number of transactions allowed per hour")
+            raise api.ApiExceededException("API Error - exceeded the number of transactions allowed per hour")
 
         data = data['info']
         satname = data['satname']
@@ -85,5 +80,12 @@ def updateDatabase(api_key):
 
     connection.commit()
 
-class ApiExceededException(Exception):
-    pass
+def getSatelliteIdByUniqueName(satname):
+
+    connection, e = getConnection()
+    cursor = connection.cursor()
+    cursor.execute('SELECT id FROM satellites WHERE nome = ?', (satname,))
+    result = cursor.fetchall()
+
+    return result[0][0]
+
