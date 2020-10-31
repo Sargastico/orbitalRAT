@@ -1,6 +1,12 @@
-import repository.database as db
 import resources.api as api
+import resources.orbit as orbit
 
-test = api.getSatelliteTLE('46235')
+resp = api.getSatelliteTLE('46235')
 
-print(test)
+satellite_tle = resp[0]['satname'] + '\n' + resp[1]
+
+tle = orbit.createTLE(satellite_tle)
+
+tle.pretty_print()
+
+orbit.drawOrbit(resp[1])

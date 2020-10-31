@@ -1,6 +1,12 @@
 import json
 import requests
 
+'''
+Using the n2yo API documented at: https://www.n2yo.com/api/
+Be careful with the requests, there is a limit of number of 'requests per hour'. 
+The default limit is 1000 transactions/hour.
+'''
+
 api_baseAddr = "https://api.n2yo.com/rest/v1/satellite"
 api_key = "LAAZLY-K8434A-49DTES-4JAD"
 
@@ -89,7 +95,7 @@ def getSatelliteINFO(sat_id):
 
 def getSatelliteTLE(sat_id):
 
-    request_url = api_baseAddr + str(sat_id) + "&apiKey=" + api_key
+    request_url = api_baseAddr +'/tle/'+ str(sat_id) + "&apiKey=" + api_key
     resp = requests.get(url=request_url)
 
     try:
@@ -155,7 +161,9 @@ def getRadioPasses(sat_id, observer_lat, observer_lng, observer_alt, days, min_e
     return info, radioPasses
 
 def getWhatIsAbove(observer_lat, observer_lng, observer_alt, search_radius, category_id):
-
+    '''
+    Please use this function responsably as there is a lot of CPU needed in order to calculate exact positions for all satellites in the sky
+    '''
     request_path = "/above/"+observer_lat+"/"+observer_lng+"/"+observer_alt+"/"+search_radius+"/"+category_id
     request_url = api_baseAddr + request_path
     resp = requests.get(url=request_url)
