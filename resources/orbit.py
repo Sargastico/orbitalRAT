@@ -1,7 +1,7 @@
 from skyfield.api import Loader, EarthSatellite
 import matplotlib.pyplot as plt
 import numpy as np
-import repository.twoLineElement
+import repository.twoLineElement as twoLineElement
 from datetime import datetime, timedelta
 from mpl_toolkits.mplot3d import Axes3D # DO NOT DELETE THIS!!!!!
 import pytz
@@ -152,8 +152,9 @@ def createTLE(tle):
         print("Invalid element.")
         return
 
-    tle = repository.twoLineElement.TLE()
+    tle = twoLineElement.TLE()
 
+    tle.name = title
     tle.satellite_number = int(line1[2:7])
     tle.classification = line1[7:8]
     tle.international_designator_year = int(line1[9:11])
