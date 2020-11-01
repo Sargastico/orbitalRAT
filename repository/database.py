@@ -34,7 +34,6 @@ def initConnection():
 
 def updateDatabase(api_key):
 
-
     connection, e = getConnection()
 
     cursor = connection.cursor()

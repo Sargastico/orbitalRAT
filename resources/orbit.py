@@ -1,11 +1,15 @@
-from skyfield.api import load ,Loader, EarthSatellite
+from skyfield.api import load, Loader, EarthSatellite
+from datetime import datetime, timedelta
+import repository.twoLineElement as twoLineElement
 import matplotlib.pyplot as plt
 import numpy as np
-import repository.twoLineElement as twoLineElement
-from datetime import datetime, timedelta
-from mpl_toolkits.mplot3d import Axes3D # DO NOT DELETE THIS!!!!!
 import cartopy.crs as ccrs
+import cartopy
 import pytz
+
+##### DO NOT DELETE THIS!!!!! #####
+from mpl_toolkits.mplot3d import Axes3D
+##### ----------------------- #####
 
 pdt = pytz.timezone('US/Pacific')
 
@@ -14,9 +18,11 @@ pi = np.pi
 sin = np.sin
 cos = np.cos
 
+# radius in km
+Earth_radius = 6371
+
 # Standard Gravitational parameter in km^3 / s^2 of Earth
 GM = 398600.4418
-
 
 def makecubelimits(ax, centers=None, hw=None):
 
@@ -48,9 +54,13 @@ def makecubelimits(ax, centers=None, hw=None):
     return centers, hw
 
 def drawOrbit(tle):
+    '''
+    Using 'skyfield' for 'SGP4'
+    For really big orbits, consider use 'drawMultiOrbits' instead.
+    '''
 
     TLE = tle
-    L1, L2 = TLE.splitlines()
+    name, L1, L2 = TLE.splitlines()
 
     halfpi, pi, twopi = [f * np.pi for f in [0.5, 1, 2]]
     degs, rads = 180 / pi, pi / 180
@@ -60,18 +70,14 @@ def drawOrbit(tle):
     ts = load.timescale()
 
     planets = load('de421.bsp')
-    earth = planets['earth']
 
     Roadster = EarthSatellite(L1, L2)
 
-    print(Roadster.epoch.tt)
     hours = np.arange(0, 3, 0.01)
 
     time = ts.utc(2018, 2, 7, hours)
 
     Rpos = Roadster.at(time).position.km
-
-    print(Rpos.shape)
 
     re = 6378.
 
@@ -106,12 +112,180 @@ def drawOrbit(tle):
 
     centers, hw = makecubelimits(ax)
 
-    print("centers are: ", centers)
-    print("hw is:       ", hw)
-
     plt.show(block=False)
 
-def drawGroundTrack(tle):
+def drawMultiOrbits(tle_list):
+
+    fig = plt.figure(figsize=plt.figaspect(1))  # Square figure
+    ax = fig.add_subplot(111, projection='3d', aspect=1)
+    ax.grid(False)
+    plt.axis('off')
+    print("------------------------------------------------------------")
+
+    ### Draw Earth as a globe at the origin
+    global Earth_radius  # km
+    max_radius = 0
+    max_radius = max(max_radius, Earth_radius)
+
+    # Coefficients in a0/c x**2 + a1/c y**2 + a2/c z**2 = 1
+    coefs = (1, 1, 1)
+
+    # Radii corresponding to the coefficients:
+    rx, ry, rz = [Earth_radius / np.sqrt(coef) for coef in coefs]
+
+    # Set of all spherical angles:
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+
+    # Cartesian coordinates that correspond to the spherical angles:
+    # (this is the equation of an ellipsoid):
+    x = rx * np.outer(np.cos(u), np.sin(v))
+    y = ry * np.outer(np.sin(u), np.sin(v))
+    z = rz * np.outer(np.ones_like(u), np.cos(v))
+
+    # Plot:
+    ax.plot_surface(x, y, z, rstride=4, cstride=4, color='b')
+
+    # halfpi, pi, twopi = [f * np.pi for f in [0.5, 1, 2]]
+    # degs, rads = 180 / pi, pi / 180
+    #
+    # load = Loader('~/Documents/fishing/SkyData')
+    # data = load('de421.bsp')
+    # ts = load.timescale()
+    #
+    # planets = load('de421.bsp')
+    # earth = planets['earth']
+    #
+    # hours = np.arange(0, 3, 0.01)
+    # time = ts.utc(2018, 2, 7, hours)
+    #
+    # re = 6378.
+    #
+    # theta = np.linspace(0, twopi, 201)
+    # cth, sth, zth = [f(theta) for f in [np.cos, np.sin, np.zeros_like]]
+    # lon0 = re * np.vstack((cth, zth, sth))
+    # lons = []
+    # for phi in rads * np.arange(0, 180, 15):
+    #     cph, sph = [f(phi) for f in [np.cos, np.sin]]
+    #     lon = np.vstack((lon0[0] * cph - lon0[1] * sph,
+    #                      lon0[1] * cph + lon0[0] * sph,
+    #                      lon0[2]))
+    #     lons.append(lon)
+    #
+    # lat0 = re * np.vstack((cth, sth, zth))
+    # lats = []
+    # for phi in rads * np.arange(-75, 90, 15):
+    #     cph, sph = [f(phi) for f in [np.cos, np.sin]]
+    #     lat = re * np.vstack((cth * cph, sth * cph, zth + sph))
+    #     lats.append(lat)
+    #
+    # fig = plt.figure(figsize=[10, 8])  # [12, 10]
+    #
+    # for tle_index in tle_list:
+    #
+    #     TLE = tle_index.raw
+    #
+    #     name, L1, L2 = TLE.splitlines()
+    #
+    #     Roadster = EarthSatellite(L1, L2)
+    #
+    #     print(Roadster.epoch.tt)
+    #
+    #     Rpos = Roadster.at(time).position.km
+    #
+    #     print(Rpos.shape)
+    #
+    #     ax = fig.add_subplot(1, 1, 1, projection='3d')
+    #
+    #     x, y, z = Rpos
+    #
+    #     ax.plot(x, y, z)
+    #
+    #     for x, y, z in lons:
+    #         ax.plot(x, y, z, '-k')
+    #     for x, y, z in lats:
+    #         ax.plot(x, y, z, '-k')
+    #
+    #     centers, hw = makecubelimits(ax)
+    #
+    #     print("centers are: ", centers)
+    #     print("hw is:       ", hw)
+    #
+    # plt.show(block=False)
+    for tle_index in tle_list:
+
+        ### "Draws orbit around an earth in units of kilometers."
+        # Rotation matrix for inclination
+        inc = tle_index.inclination * pi / 180.;
+        R = np.matrix([[1, 0, 0],
+                       [0, cos(inc), -sin(inc)],
+                       [0, sin(inc), cos(inc)]])
+
+        # Rotation matrix for argument of perigee + right ascension
+        rot = (tle_index.right_ascension + tle_index.argument_perigee) * pi / 180
+        R2 = np.matrix([[cos(rot), -sin(rot), 0],
+                        [sin(rot), cos(rot), 0],
+                        [0, 0, 1]])
+
+        ### Draw orbit
+        theta = np.linspace(0, 2 * pi, 360)
+        r = (tle_index.semi_major_axis * (1 - tle_index.eccentricity ** 2)) / (1 + tle_index.eccentricity * cos(theta))
+
+        xr = r * cos(theta)
+        yr = r * sin(theta)
+        zr = 0 * theta
+
+        pts = np.column_stack((xr, yr, zr))
+
+        # Rotate by inclination
+        # Rotate by ascension + perigee
+        pts = (R * R2 * pts.T).T
+
+        # Turn back into 1d vectors
+        xr, yr, zr = pts[:, 0].A.flatten(), pts[:, 1].A.flatten(), pts[:, 2].A.flatten()
+
+        # Plot the orbit
+        ax.plot(xr, yr, zr, '-')
+        # plt.xlabel('X (km)')
+        # plt.ylabel('Y (km)')
+        # plt.zlabel('Z (km)')
+
+        # Plot the satellite
+        sat_angle = tle_index.true_anomaly * pi / 180
+        satr = (tle_index.semi_major_axis * (1 - tle_index.eccentricity ** 2)) / (1 + tle_index.eccentricity * cos(sat_angle))
+        satx = satr * cos(sat_angle)
+        saty = satr * sin(sat_angle)
+        satz = 0
+
+        sat = (R * R2 * np.matrix([satx, saty, satz]).T).flatten()
+        satx = sat[0, 0]
+        saty = sat[0, 1]
+        satz = sat[0, 2]
+
+        c = np.sqrt(satx * satx + saty * saty)
+        lat = np.arctan2(satz, c) * 180 / pi
+        lon = np.arctan2(saty, satx) * 180 / pi
+        print("%s : Lat: %g° Long: %g" % (tle_index.name, lat, lon))
+
+        # Draw radius vector from earth
+        # ax.plot([0, satx], [0, saty], [0, satz], 'r-')
+        # Draw red sphere for satellite
+        ax.plot([satx], [saty], [satz], 'ro')
+
+        max_radius = max(max(r), max_radius)
+
+        # Write satellite name next to it
+        if tle_index.name:
+            ax.text(satx, saty, satz, tle_index.name, fontsize=12)
+
+    for axis in 'xyz':
+        getattr(ax, 'set_{}lim'.format(axis))((-max_radius, max_radius))
+
+    # Draw figure
+    print("------------------------------------------------------------")
+    plt.show(block=False)
+
+def drawGroundTrack(tle, observer_lat=None, observer_lon=None):
 
     ts = load.timescale(builtin=True)
 
@@ -130,8 +304,32 @@ def drawGroundTrack(tle):
 
     ax.stock_img()
 
-    plt.scatter(subsat.longitude.degrees, subsat.latitude.degrees, transform=ccrs.PlateCarree(),
-                color='red', linewidths=0.009)
+    plt.scatter(subsat.longitude.degrees, subsat.latitude.degrees, transform=ccrs.PlateCarree(), s=1.5, color='red')
+
+    ### Longitude and Latidude grid/labels
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.add_feature(cartopy.feature.COASTLINE)
+    gridlines = ax.gridlines(draw_labels=True)
+
+    ax.text(-0.07, 0.55, 'latitude', va='bottom', ha='center',
+            rotation='vertical', rotation_mode='anchor',
+            transform=ax.transAxes)
+
+    ax.text(0.5, -0.2, 'longitude', va='bottom', ha='center',
+            rotation='horizontal', rotation_mode='anchor',
+            transform=ax.transAxes)
+
+    ### Plot observer position on map
+    if (observer_lat and observer_lon) != None:
+        plt.plot(observer_lon, observer_lat,
+                 color='blue', linewidth=2, marker='o',
+                 transform=ccrs.Geodetic(),
+                 )
+
+        plt.text(observer_lon, observer_lat, 'You',
+                 horizontalalignment='right',
+                 transform=ccrs.Geodetic())
+
     plt.show(block=False)
 
 def splitElem(tle):
@@ -161,18 +359,18 @@ def eccentricAnomalyFromMean(mean_anomaly, eccentricity, initValue,maxIter=500, 
             break
     return e1
 
-def createTLE(tle):
+def createTLE(sat_tle):
 
 
-    title, line1, line2 = splitElem(tle)
+    title, line1, line2 = splitElem(sat_tle)
 
-    if not checkValid(tle):
+    if not checkValid(sat_tle):
         print("Invalid element.")
         return
 
     tle = twoLineElement.TLE()
 
-    tle.raw = line1 + '\n' + line2
+    tle.raw = sat_tle
     tle.name = title
     tle.satellite_number = int(line1[2:7])
     tle.classification = line1[7:8]

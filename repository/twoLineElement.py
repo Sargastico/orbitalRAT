@@ -1,6 +1,9 @@
+import resources.orbit as orbit
+
+
 class TLE:
 
-    name= None
+    name = None
     raw = None
     tle = None
     title = None
@@ -62,3 +65,11 @@ class TLE:
         print("right_ascension                                           = %g°" % self.right_ascension)
         print("true_anomaly                                              = %g°" % self.true_anomaly)
         print("----------------------------------------------------------------------------------------")
+
+
+    def groundTrack(self, observer_lat=None, observer_lon=None):
+        orbit.drawGroundTrack(self.raw,  observer_lat, observer_lon)
+
+
+    def drawOrbit(self):
+        orbit.drawOrbit(self.raw)
