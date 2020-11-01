@@ -1,6 +1,7 @@
 class TLE:
 
     name= None
+    raw = None
     tle = None
     title = None
     satellite_number = None
@@ -28,12 +29,12 @@ class TLE:
     epoch = None
     first_time_derivative_of_the_mean_motion_divided_by_two = None
 
-    def pretty_print(self):
+    def infoPrint(self):
 
         print("----------------------------------------------------------------------------------------")
         print(self.name)
+        print(self.raw)
         print("----------------------------------------------------------------------------------------")
-       # print("Satellite Name                                            = %s" % self.title)
         print("Satellite number                                          = %g (%s)" % (self.satellite_number, "Unclassified" if self.classification == 'U' else "Classified"))
         print("International Designator                                  = YR: %02d, LAUNCH #%d, PIECE: %s" % (self.international_designator_year, self.international_designator_launch_number, self.international_designator_piece_of_launch))
         print("Epoch Date                                                = %s  (YR:%02d DAY:%.11g)" % (self.epoch_date.strftime("%Y-%m-%d %H:%M:%S.%f %Z"), self.epoch_year, self.epoch))

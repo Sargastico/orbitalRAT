@@ -1,9 +1,10 @@
-from skyfield.api import Loader, EarthSatellite
+from skyfield.api import load ,Loader, EarthSatellite
 import matplotlib.pyplot as plt
 import numpy as np
 import repository.twoLineElement as twoLineElement
 from datetime import datetime, timedelta
 from mpl_toolkits.mplot3d import Axes3D # DO NOT DELETE THIS!!!!!
+import cartopy.crs as ccrs
 import pytz
 
 pdt = pytz.timezone('US/Pacific')
@@ -45,7 +46,6 @@ def makecubelimits(ax, centers=None, hw=None):
             ax.set_zlim(centers[2] - hw, centers[2] + hw)
 
     return centers, hw
-
 
 def drawOrbit(tle):
 
@@ -109,12 +109,34 @@ def drawOrbit(tle):
     print("centers are: ", centers)
     print("hw is:       ", hw)
 
-    plt.show()
+    plt.show(block=False)
+
+def drawGroundTrack(tle):
+
+    ts = load.timescale(builtin=True)
+
+    name, L1, L2 = tle.splitlines()
+
+    sat = EarthSatellite(L1, L2)
+
+    minutes = np.arange(0, 200, 0.1)  # about two orbits
+    times = ts.utc(2020, 10, 31, 21, minutes)
+
+    geocentric = sat.at(times)
+    subsat = geocentric.subpoint()
+
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+
+    ax.stock_img()
+
+    plt.scatter(subsat.longitude.degrees, subsat.latitude.degrees, transform=ccrs.PlateCarree(),
+                color='red', linewidths=0.009)
+    plt.show(block=False)
 
 def splitElem(tle):
     "Splits a two line element set into title and it's two lines with stripped lines"
     return map(lambda x: x.strip(), tle.split('\n'))
-
 
 def checkValid(tle):
     "Checks with checksum to make sure element is valid"
@@ -124,14 +146,11 @@ def checkValid(tle):
            line1[2:7] == line2[2:7] and \
            int(line1[-1]) == doChecksum(line1) and int(line2[-1]) == doChecksum(line2)
 
-
 def stringScientificNotationToFloat(sn):
     "Specific format is 5 digits, a + or -, and 1 digit, ex: 01234-5 which is 0.01234e-5"
     return 0.00001 * float(sn[5]) * 10 ** int(sn[6:])
 
-
-def eccentricAnomalyFromMean(mean_anomaly, eccentricity, initValue,
-                             maxIter=500, maxAccuracy=0.0001):
+def eccentricAnomalyFromMean(mean_anomaly, eccentricity, initValue,maxIter=500, maxAccuracy=0.0001):
     """Approximates Eccentric Anomaly from Mean Anomaly
        All input and outputs are in radians"""
     mean_anomaly = mean_anomaly
@@ -141,7 +160,6 @@ def eccentricAnomalyFromMean(mean_anomaly, eccentricity, initValue,
         if abs(e1 - e0) < maxAccuracy:
             break
     return e1
-
 
 def createTLE(tle):
 
@@ -154,6 +172,7 @@ def createTLE(tle):
 
     tle = twoLineElement.TLE()
 
+    tle.raw = line1 + '\n' + line2
     tle.name = title
     tle.satellite_number = int(line1[2:7])
     tle.classification = line1[7:8]
@@ -187,11 +206,8 @@ def createTLE(tle):
     # Time difference of now from epoch, offset in radians
     diff = datetime.now().replace(tzinfo=pytz.utc) + timedelta(hours=8) - tle.epoch_date  # Offset for PDT
     diff_seconds = 24 * 60 * 60 * diff.days + diff.seconds + 1e-6 * diff.microseconds  # sec
-    print("Time offset: %s" % diff)
     tle.motion_per_sec = tle.mean_motion * 2 * pi / (24 * 60 * 60)  # rad/sec
-    print("Radians per second: %g" % tle.motion_per_sec)
     offset = diff_seconds * tle.motion_per_sec  # rad
-    print("Offset to apply: %g" % offset)
     tle.mean_anomaly += offset * 180 / pi % 360
 
     # Inferred period
