@@ -6,6 +6,10 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy
 import pytz
+import warnings
+
+
+warnings.filterwarnings("ignore")
 
 ##### DO NOT DELETE THIS!!!!! #####
 from mpl_toolkits.mplot3d import Axes3D
@@ -36,17 +40,15 @@ def makecubelimits(ax, centers=None, hw=None):
         ax.set_xlim(centers[0] - hw, centers[0] + hw)
         ax.set_ylim(centers[1] - hw, centers[1] + hw)
         ax.set_zlim(centers[2] - hw, centers[2] + hw)
-        print("hw was None so set to:", hw)
+
     else:
         try:
             hwx, hwy, hwz = hw
-            print("ok hw requested: ", hwx, hwy, hwz)
 
             ax.set_xlim(centers[0] - hwx, centers[0] + hwx)
             ax.set_ylim(centers[1] - hwy, centers[1] + hwy)
             ax.set_zlim(centers[2] - hwz, centers[2] + hwz)
         except:
-            print("nope hw requested: ", hw)
             ax.set_xlim(centers[0] - hw, centers[0] + hw)
             ax.set_ylim(centers[1] - hw, centers[1] + hw)
             ax.set_zlim(centers[2] - hw, centers[2] + hw)
@@ -120,7 +122,6 @@ def drawMultiOrbits(tle_list):
     ax = fig.add_subplot(111, projection='3d', aspect=1)
     ax.grid(False)
     plt.axis('off')
-    print("------------------------------------------------------------")
 
     ### Draw Earth as a globe at the origin
     global Earth_radius  # km
@@ -216,7 +217,7 @@ def drawMultiOrbits(tle_list):
         getattr(ax, 'set_{}lim'.format(axis))((-max_radius, max_radius))
 
     # Draw figure
-    print("------------------------------------------------------------")
+    print("----------------------------------------------------------------------------------------")
     plt.show(block=False)
 
 def drawGroundTrack(tle, observer_lat=None, observer_lon=None):
@@ -366,4 +367,3 @@ def doChecksum(line):
        characters are ignored.
        @note this excludes last char for the checksum thats already there."""
     return sum(map(int, filter(lambda c: c >= '0' and c <= '9', line[:-1].replace('-', '1')))) % 10
-

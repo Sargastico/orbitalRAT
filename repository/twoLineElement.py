@@ -1,7 +1,12 @@
 import resources.orbit as orbit
 
-
 class TLE:
+
+    def groundTrack(self, observer_lat=None, observer_lon=None):
+        orbit.drawGroundTrack(self.raw,  observer_lat, observer_lon)
+
+    def drawOrbit(self):
+        orbit.drawOrbit(self.raw)
 
     name = None
     raw = None
@@ -35,7 +40,6 @@ class TLE:
     def infoPrint(self):
 
         print("----------------------------------------------------------------------------------------")
-        print(self.name)
         print(self.raw)
         print("----------------------------------------------------------------------------------------")
         print("Satellite number                                          = %g (%s)" % (self.satellite_number, "Unclassified" if self.classification == 'U' else "Classified"))
@@ -65,11 +69,3 @@ class TLE:
         print("right_ascension                                           = %g°" % self.right_ascension)
         print("true_anomaly                                              = %g°" % self.true_anomaly)
         print("----------------------------------------------------------------------------------------")
-
-
-    def groundTrack(self, observer_lat=None, observer_lon=None):
-        orbit.drawGroundTrack(self.raw,  observer_lat, observer_lon)
-
-
-    def drawOrbit(self):
-        orbit.drawOrbit(self.raw)
