@@ -2,8 +2,8 @@ import resources.orbit as orbit
 
 class TLE:
 
-    def groundTrack(self, observer_lat=None, observer_lon=None):
-        orbit.drawGroundTrack(self.raw,  observer_lat, observer_lon)
+    def groundTrack(self, timestamp, observer_lat=None, observer_lon=None):
+        orbit.drawGroundTrack(self.raw, timestamp, observer_lat, observer_lon)
 
     def drawOrbit(self):
         orbit.drawOrbit(self.raw)

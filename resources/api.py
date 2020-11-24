@@ -107,7 +107,8 @@ def getSatelliteTLE(sat_id):
     info = data['info']
     tle = data['tle']
 
-    return info, tle
+    return info['satname'] + '\n' + tle
+
 
 def getSatelliteFuturePositions(sat_id, observer_lat, observer_lng, observer_alt, seconds):
 

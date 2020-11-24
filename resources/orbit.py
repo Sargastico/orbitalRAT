@@ -181,8 +181,8 @@ def drawMultiOrbits(tle_list):
 
         # Plot the orbit
         ax.plot(xr, yr, zr, '-')
-        # plt.xlabel('X (km)')
-        # plt.ylabel('Y (km)')
+        plt.xlabel('X (km)')
+        plt.ylabel('Y (km)')
         # plt.zlabel('Z (km)')
 
         # Plot the satellite
@@ -220,7 +220,7 @@ def drawMultiOrbits(tle_list):
     print("----------------------------------------------------------------------------------------")
     plt.show(block=False)
 
-def drawGroundTrack(tle, observer_lat=None, observer_lon=None):
+def drawGroundTrack(tle, timestamp,  observer_lat=None, observer_lon=None):
 
     ts = load.timescale(builtin=True)
 
@@ -228,8 +228,10 @@ def drawGroundTrack(tle, observer_lat=None, observer_lon=None):
 
     sat = EarthSatellite(L1, L2)
 
+    date_object = datetime.fromtimestamp(timestamp)
+
     minutes = np.arange(0, 200, 0.1)  # about two orbits
-    times = ts.utc(2020, 10, 31, 21, minutes)
+    times = ts.utc(date_object.year, date_object.month, date_object.day, date_object.hour, minutes)
 
     geocentric = sat.at(times)
     subsat = geocentric.subpoint()

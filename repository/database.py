@@ -87,4 +87,3 @@ def getSatelliteIdByUniqueName(satname):
     result = cursor.fetchall()
 
     return result[0][0]
-
