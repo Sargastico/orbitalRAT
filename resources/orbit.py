@@ -1,13 +1,9 @@
-from skyfield.api import load, Loader, EarthSatellite
 from datetime import datetime, timedelta
 import repository.twoLineElement as twoLineElement
-import matplotlib.pyplot as plt
 import numpy as np
-import cartopy.crs as ccrs
-import cartopy
 import pytz
 import warnings
-
+import builtins
 
 warnings.filterwarnings("ignore")
 
@@ -55,219 +51,56 @@ def makecubelimits(ax, centers=None, hw=None):
 
     return centers, hw
 
-def drawOrbit(tle):
-    '''
-    Using 'skyfield' for 'SGP4'
-    For really big orbits, consider use 'drawMultiOrbits' instead.
-    '''
+def calcOrbitEllipse(tle):
 
-    TLE = tle
-    name, L1, L2 = TLE.splitlines()
+    ### "Draws orbit around an earth in units of kilometers."
+    # Rotation matrix for inclination
+    inc = tle.inclination * pi / 180.;
+    R = np.matrix([[1, 0, 0],
+                   [0, cos(inc), -sin(inc)],
+                   [0, sin(inc), cos(inc)]])
 
-    halfpi, pi, twopi = [f * np.pi for f in [0.5, 1, 2]]
-    degs, rads = 180 / pi, pi / 180
+    # Rotation matrix for argument of perigee + right ascension
+    rot = (tle.right_ascension + tle.argument_perigee) * pi / 180
+    R2 = np.matrix([[cos(rot), -sin(rot), 0],
+                    [sin(rot), cos(rot), 0],
+                    [0, 0, 1]])
 
-    load = Loader('~/Documents/fishing/SkyData')
-    data = load('de421.bsp')
-    ts = load.timescale()
+    ### Draw orbit
+    theta = np.linspace(0, 2 * pi, 360)
+    r = (tle.semi_major_axis * (1 - tle.eccentricity ** 2)) / (1 + tle.eccentricity * cos(theta))
 
-    planets = load('de421.bsp')
+    xr = r * cos(theta)
+    yr = r * sin(theta)
+    zr = 0 * theta
 
-    Roadster = EarthSatellite(L1, L2)
+    pts = np.column_stack((xr, yr, zr))
 
-    hours = np.arange(0, 3, 0.01)
+    # Rotate by inclination
+    # Rotate by ascension + perigee
+    pts = (R * R2 * pts.T).T
 
-    time = ts.utc(2018, 2, 7, hours)
+    # Turn back into 1d vectors
+    xr, yr, zr = pts[:, 0].A.flatten(), pts[:, 1].A.flatten(), pts[:, 2].A.flatten()
 
-    Rpos = Roadster.at(time).position.km
+    # Plot the satellite
+    sat_angle = tle.true_anomaly * pi / 180
+    satr = (tle.semi_major_axis * (1 - tle.eccentricity ** 2)) / (1 + tle.eccentricity * cos(sat_angle))
+    satx = satr * cos(sat_angle)
+    saty = satr * sin(sat_angle)
+    satz = 0
 
-    re = 6378.
+    sat = (R * R2 * np.matrix([satx, saty, satz]).T).flatten()
+    satx = sat[0, 0]
+    saty = sat[0, 1]
+    satz = sat[0, 2]
 
-    theta = np.linspace(0, twopi, 201)
-    cth, sth, zth = [f(theta) for f in [np.cos, np.sin, np.zeros_like]]
-    lon0 = re * np.vstack((cth, zth, sth))
-    lons = []
-    for phi in rads * np.arange(0, 180, 15):
-        cph, sph = [f(phi) for f in [np.cos, np.sin]]
-        lon = np.vstack((lon0[0] * cph - lon0[1] * sph,
-                         lon0[1] * cph + lon0[0] * sph,
-                         lon0[2]))
-        lons.append(lon)
+    c = np.sqrt(satx * satx + saty * saty)
+    lat = np.arctan2(satz, c) * 180 / pi
+    lon = np.arctan2(saty, satx) * 180 / pi
+    print("%s : Lat: %g° Long: %g" % (tle.name, lat, lon))
 
-    lat0 = re * np.vstack((cth, sth, zth))
-    lats = []
-    for phi in rads * np.arange(-75, 90, 15):
-        cph, sph = [f(phi) for f in [np.cos, np.sin]]
-        lat = re * np.vstack((cth * cph, sth * cph, zth + sph))
-        lats.append(lat)
-
-    fig = plt.figure(figsize=[10, 8])  # [12, 10]
-
-    ax = fig.add_subplot(1, 1, 1, projection='3d')
-
-    x, y, z = Rpos
-    ax.plot(x, y, z)
-    for x, y, z in lons:
-        ax.plot(x, y, z, '-k')
-    for x, y, z in lats:
-        ax.plot(x, y, z, '-k')
-
-    centers, hw = makecubelimits(ax)
-
-    plt.show(block=False)
-
-def drawMultiOrbits(tle_list):
-
-    fig = plt.figure(figsize=plt.figaspect(1))  # Square figure
-    ax = fig.add_subplot(111, projection='3d', aspect=1)
-    ax.grid(False)
-    plt.axis('off')
-
-    ### Draw Earth as a globe at the origin
-    global Earth_radius  # km
-    max_radius = 0
-    max_radius = max(max_radius, Earth_radius)
-
-    # Coefficients in a0/c x**2 + a1/c y**2 + a2/c z**2 = 1
-    coefs = (1, 1, 1)
-
-    # Radii corresponding to the coefficients:
-    rx, ry, rz = [Earth_radius / np.sqrt(coef) for coef in coefs]
-
-    # Set of all spherical angles:
-    u = np.linspace(0, 2 * np.pi, 100)
-    v = np.linspace(0, np.pi, 100)
-
-    # Cartesian coordinates that correspond to the spherical angles:
-    # (this is the equation of an ellipsoid):
-    x = rx * np.outer(np.cos(u), np.sin(v))
-    y = ry * np.outer(np.sin(u), np.sin(v))
-    z = rz * np.outer(np.ones_like(u), np.cos(v))
-
-    # Plot:
-    ax.plot_surface(x, y, z, rstride=4, cstride=4, color='b')
-
-    for tle_index in tle_list:
-
-        ### "Draws orbit around an earth in units of kilometers."
-        # Rotation matrix for inclination
-        inc = tle_index.inclination * pi / 180.;
-        R = np.matrix([[1, 0, 0],
-                       [0, cos(inc), -sin(inc)],
-                       [0, sin(inc), cos(inc)]])
-
-        # Rotation matrix for argument of perigee + right ascension
-        rot = (tle_index.right_ascension + tle_index.argument_perigee) * pi / 180
-        R2 = np.matrix([[cos(rot), -sin(rot), 0],
-                        [sin(rot), cos(rot), 0],
-                        [0, 0, 1]])
-
-        ### Draw orbit
-        theta = np.linspace(0, 2 * pi, 360)
-        r = (tle_index.semi_major_axis * (1 - tle_index.eccentricity ** 2)) / (1 + tle_index.eccentricity * cos(theta))
-
-        xr = r * cos(theta)
-        yr = r * sin(theta)
-        zr = 0 * theta
-
-        pts = np.column_stack((xr, yr, zr))
-
-        # Rotate by inclination
-        # Rotate by ascension + perigee
-        pts = (R * R2 * pts.T).T
-
-        # Turn back into 1d vectors
-        xr, yr, zr = pts[:, 0].A.flatten(), pts[:, 1].A.flatten(), pts[:, 2].A.flatten()
-
-        # Plot the orbit
-        ax.plot(xr, yr, zr, '-')
-        plt.xlabel('X (km)')
-        plt.ylabel('Y (km)')
-        # plt.zlabel('Z (km)')
-
-        # Plot the satellite
-        sat_angle = tle_index.true_anomaly * pi / 180
-        satr = (tle_index.semi_major_axis * (1 - tle_index.eccentricity ** 2)) / (1 + tle_index.eccentricity * cos(sat_angle))
-        satx = satr * cos(sat_angle)
-        saty = satr * sin(sat_angle)
-        satz = 0
-
-        sat = (R * R2 * np.matrix([satx, saty, satz]).T).flatten()
-        satx = sat[0, 0]
-        saty = sat[0, 1]
-        satz = sat[0, 2]
-
-        c = np.sqrt(satx * satx + saty * saty)
-        lat = np.arctan2(satz, c) * 180 / pi
-        lon = np.arctan2(saty, satx) * 180 / pi
-        print("%s : Lat: %g° Long: %g" % (tle_index.name, lat, lon))
-
-        # Draw radius vector from earth
-        # ax.plot([0, satx], [0, saty], [0, satz], 'r-')
-        # Draw red sphere for satellite
-        ax.plot([satx], [saty], [satz], 'ro')
-
-        max_radius = max(max(r), max_radius)
-
-        # Write satellite name next to it
-        if tle_index.name:
-            ax.text(satx, saty, satz, tle_index.name, fontsize=12)
-
-    for axis in 'xyz':
-        getattr(ax, 'set_{}lim'.format(axis))((-max_radius, max_radius))
-
-    # Draw figure
-    print("----------------------------------------------------------------------------------------")
-    plt.show(block=False)
-
-def drawGroundTrack(tle, timestamp,  observer_lat=None, observer_lon=None):
-
-    ts = load.timescale(builtin=True)
-
-    name, L1, L2 = tle.splitlines()
-
-    sat = EarthSatellite(L1, L2)
-
-    date_object = datetime.fromtimestamp(timestamp)
-
-    minutes = np.arange(0, 200, 0.1)  # about two orbits
-    times = ts.utc(date_object.year, date_object.month, date_object.day, date_object.hour, minutes)
-
-    geocentric = sat.at(times)
-    subsat = geocentric.subpoint()
-
-    fig = plt.figure(figsize=(20, 10))
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-
-    ax.stock_img()
-
-    plt.scatter(subsat.longitude.degrees, subsat.latitude.degrees, transform=ccrs.PlateCarree(), s=1.5, color='red')
-
-    ### Longitude and Latidude grid/labels
-    ax = plt.axes(projection=ccrs.PlateCarree())
-    ax.add_feature(cartopy.feature.COASTLINE)
-    gridlines = ax.gridlines(draw_labels=True)
-
-    ax.text(-0.07, 0.55, 'latitude', va='bottom', ha='center',
-            rotation='vertical', rotation_mode='anchor',
-            transform=ax.transAxes)
-
-    ax.text(0.5, -0.2, 'longitude', va='bottom', ha='center',
-            rotation='horizontal', rotation_mode='anchor',
-            transform=ax.transAxes)
-
-    ### Plot observer position on map
-    if (observer_lat and observer_lon) != None:
-        plt.plot(observer_lon, observer_lat,
-                 color='blue', linewidth=2, marker='o',
-                 transform=ccrs.Geodetic(),
-                 )
-
-        plt.text(observer_lon, observer_lat, 'You',
-                 horizontalalignment='right',
-                 transform=ccrs.Geodetic())
-
-    plt.show(block=False)
+    return xr, yr, zr, satx, saty, satz
 
 def splitElem(tle):
     "Splits a two line element set into title and it's two lines with stripped lines"
@@ -297,7 +130,6 @@ def eccentricAnomalyFromMean(mean_anomaly, eccentricity, initValue,maxIter=500, 
     return e1
 
 def createTLE(sat_tle):
-
 
     title, line1, line2 = splitElem(sat_tle)
 

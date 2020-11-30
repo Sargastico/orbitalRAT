@@ -1,13 +1,8 @@
-import resources.orbit as orbit
+import resources.render as render
+
+api = ''
 
 class TLE:
-
-    def groundTrack(self, timestamp, observer_lat=None, observer_lon=None):
-        orbit.drawGroundTrack(self.raw, timestamp, observer_lat, observer_lon)
-
-    def drawOrbit(self):
-        orbit.drawOrbit(self.raw)
-
     name = None
     raw = None
     tle = None
@@ -42,11 +37,17 @@ class TLE:
         print("----------------------------------------------------------------------------------------")
         print(self.raw)
         print("----------------------------------------------------------------------------------------")
-        print("Satellite number                                          = %g (%s)" % (self.satellite_number, "Unclassified" if self.classification == 'U' else "Classified"))
-        print("International Designator                                  = YR: %02d, LAUNCH #%d, PIECE: %s" % (self.international_designator_year, self.international_designator_launch_number, self.international_designator_piece_of_launch))
-        print("Epoch Date                                                = %s  (YR:%02d DAY:%.11g)" % (self.epoch_date.strftime("%Y-%m-%d %H:%M:%S.%f %Z"), self.epoch_year, self.epoch))
-        print("First Time Derivative of the Mean Motion divided by two   = %g" % self.first_time_derivative_of_the_mean_motion_divided_by_two)
-        print("Second Time Derivative of Mean Motion divided by six      = %g" % self.second_time_derivative_of_mean_motion_divided_by_six)
+        print("Satellite number                                          = %g (%s)" % (
+        self.satellite_number, "Unclassified" if self.classification == 'U' else "Classified"))
+        print("International Designator                                  = YR: %02d, LAUNCH #%d, PIECE: %s" % (
+        self.international_designator_year, self.international_designator_launch_number,
+        self.international_designator_piece_of_launch))
+        print("Epoch Date                                                = %s  (YR:%02d DAY:%.11g)" % (
+        self.epoch_date.strftime("%Y-%m-%d %H:%M:%S.%f %Z"), self.epoch_year, self.epoch))
+        print(
+            "First Time Derivative of the Mean Motion divided by two   = %g" % self.first_time_derivative_of_the_mean_motion_divided_by_two)
+        print(
+            "Second Time Derivative of Mean Motion divided by six      = %g" % self.second_time_derivative_of_mean_motion_divided_by_six)
         print("BSTAR drag term                                           = %g" % self.bstar_drag_term)
         print("The number 0                                              = %g" % self.the_number_0)
         print("Element number                                            = %g" % self.element_number)
@@ -69,3 +70,17 @@ class TLE:
         print("right_ascension                                           = %g°" % self.right_ascension)
         print("true_anomaly                                              = %g°" % self.true_anomaly)
         print("----------------------------------------------------------------------------------------")
+
+    def groundTrack(self, timestamp, observer_lat=None, observer_lon=None):
+        render.drawGroundTrack(self.raw, timestamp, observer_lat, observer_lon)
+
+    def drawOrbit(self, api = 'matplotlib'):
+
+        if api == 'pyqtgraph':
+            api = render.GLVisualizer(self)
+            api.drawEarth()
+            api.drawSatOrbit()
+            api.start()
+
+        else:
+            render.drawOrbit(self.raw)

@@ -1,5 +1,6 @@
 import resources.api as api
 import resources.orbit as orbit
+import resources.render as render
 from datetime import datetime
 
 dateTimeObj = datetime.now()
@@ -24,6 +25,9 @@ tle2.infoPrint()
 tle2.groundTrack(dateTimeObj.timestamp(), -22.833425, -47.037964)
 tle2.drawOrbit()
 
-orbit.drawMultiOrbits(tle_list)
+render.drawMultiOrbits(tle_list)
+
 
 input("\nPress enter to exit ;)")
+
+
