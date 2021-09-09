@@ -8,19 +8,20 @@
 <br></br>
 
 <div align="center">
+  
   SOME SH1TTY DISPLAY EXAMPLE IMAGES:
   <br></br>
   <br></br>
-  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Capturar.JPG width="60%">
+  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Capturar.JPG" width="60%">
     
   <br></br>
-  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Figure_1.png width="60%">
+  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Figure_1.png" width="60%">
     
   <br></br>
-  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Figure_2.png width="60%">
+  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Figure_2.png" width="60%">
     
   <br></br>
-  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Figure_3.png width="60%">
+  <img src="https://github.com/Sargastico/orbitalRAT/blob/main/assets/Figure_3.png" width="60%">
   
 </div>
 
