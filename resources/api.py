@@ -8,7 +8,7 @@ The default limit is 1000 transactions/hour.
 '''
 
 api_baseAddr = "https://api.n2yo.com/rest/v1/satellite"
-api_key = "LAAZLY-K8434A-49DTES-4JAD"
+api_key = ""
 
 category_filter = {
     "Amateur radio": 18,
